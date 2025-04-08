@@ -86,7 +86,7 @@ class AudioApp:
         self.frame_analysis_frame = tk.Frame(self.analysis_frame, relief=tk.RIDGE, borderwidth=2, border=1)
         self.frame_analysis_frame.pack(padx=20, side=tk.LEFT, fill='y')
 
-        self.frame_label = tk.Label(self.frame_analysis_frame, text="Wykresy parametrów")
+        self.frame_label = tk.Label(self.frame_analysis_frame, text="Podstawowe wykresy")
         self.frame_label.pack(pady=5, padx=10)
 
         self.volume_button = tk.Button(self.frame_analysis_frame, text="Głośność", command=self.plot_volume, state=tk.DISABLED)
@@ -95,42 +95,47 @@ class AudioApp:
         self.fc_button = tk.Button(self.frame_analysis_frame, text="Centroidy", command=self.plot_fc, state=tk.DISABLED)
         self.fc_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
 
-        self.bandwidth_button = tk.Button(self.frame_analysis_frame, text="Efektywne pasmo", command=self.plot_bandwidth, state=tk.DISABLED)
-        self.bandwidth_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
-
-        self.ersb_button = tk.Button(self.frame_analysis_frame, text="ERSB (pasma)", command=self.plot_ersb, state=tk.DISABLED)
-        self.ersb_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
-
         self.sfm_button = tk.Button(self.frame_analysis_frame, text="SFM", command=self.plot_sfm, state=tk.DISABLED)
         self.sfm_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
 
-        self.sfmb_button = tk.Button(self.frame_analysis_frame, text="SFM (pasma)", command=self.plot_sfm_bands, state=tk.DISABLED)
+        self.f0_button = tk.Button(self.frame_analysis_frame, text="F0 (cepstrum)", command=self.plot_f0, state=tk.DISABLED)
+        self.f0_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
+
+        # bands analysis
+        self.bands_analysis_frame = tk.Frame(self.analysis_frame, relief=tk.RIDGE, borderwidth=2, border=1)
+        self.bands_analysis_frame.pack(padx=20, side=tk.LEFT, fill='y')
+
+        self.bands_label = tk.Label(self.bands_analysis_frame, text="Analiza pasm")
+        self.bands_label.pack(pady=5, padx=10)
+
+        self.ersb_button = tk.Button(self.bands_analysis_frame, text="ERSB (pasma)", command=self.plot_ersb, state=tk.DISABLED)
+        self.ersb_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
+
+        self.bandwidth_button = tk.Button(self.bands_analysis_frame, text="Efektywne pasmo", command=self.plot_bandwidth, state=tk.DISABLED)
+        self.bandwidth_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
+
+        self.sfmb_button = tk.Button(self.bands_analysis_frame, text="SFM (pasma)", command=self.plot_sfm_bands, state=tk.DISABLED)
         self.sfmb_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
 
-        self.scfb_button = tk.Button(self.frame_analysis_frame, text="SCF (pasma)", command=self.plot_scf_bands, state=tk.DISABLED)
+        self.scfb_button = tk.Button(self.bands_analysis_frame, text="SCF (pasma)", command=self.plot_scf_bands, state=tk.DISABLED)
         self.scfb_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
+
 
         # clip analysis
         self.clip_analysis_frame = tk.Frame(self.analysis_frame, relief=tk.RIDGE, borderwidth=10, border=1)
         self.clip_analysis_frame.pack(padx=20, side=tk.RIGHT, fill='y')
 
-        self.f0_label = tk.Label(self.clip_analysis_frame, text="Inne analizy")
-        self.f0_label.pack(pady=5, padx=10)
+        self.clip_label = tk.Label(self.clip_analysis_frame, text="Inne analizy")
+        self.clip_label.pack(pady=5, padx=10)
 
         self.windows_button = tk.Button(self.clip_analysis_frame, text="Funkcje okna", command=self.window_analysis_window, state=tk.DISABLED)
         self.windows_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
 
         self.spect_button = tk.Button(self.clip_analysis_frame, text="Spektrogram", command=self.spectrogram_window, state=tk.DISABLED)
-        self.spect_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
+        self.spect_button.pack(pady=5, padx=10, side=tk.TOP, fill='x') 
 
-        # self.clip_label = tk.Label(self.clip_analysis_frame, text="Inne analizy")
-        # self.clip_label.pack(pady=(15, 5), padx=10)
-
-        self.parameters_button = tk.Button(self.clip_analysis_frame, text="Parametry klipu", command=self.show_parameters, state=tk.DISABLED)
-        self.parameters_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
-
-        # self.classification_button = tk.Button(self.clip_analysis_frame, text="Klasyfikacja", command=self.plot_classification, state=tk.DISABLED)
-        # self.classification_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
+        # self.parameters_button = tk.Button(self.clip_analysis_frame, text="Parametry klipu", command=self.show_parameters, state=tk.DISABLED)
+        # self.parameters_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
 
         # canvas
 
@@ -160,7 +165,7 @@ class AudioApp:
         self.draw_waveform()
     
     def activate_buttons(self):
-        frames = [self.clip_analysis_frame, self.frame_analysis_frame]
+        frames = [self.clip_analysis_frame, self.frame_analysis_frame, self.bands_analysis_frame]
         for frame in frames:
             for _, child in frame.children.items():
                 if isinstance(child, tk.Button):
@@ -367,6 +372,19 @@ class AudioApp:
         plt.title("Spectral Crest Factor w pasmach częstotliwości w czasie")
         plt.legend()
         plt.grid()
+        plt.show()
+
+    def plot_f0(self):
+        f0, time = self.analyzer.f0()
+
+        plt.figure(figsize=(10, 4))
+        plt.plot(time, f0)
+        plt.xlabel("Czas [s]")
+        plt.ylabel("Częstotliwość [Hz]")
+        plt.title("Częstotliwość krtaniowa f0 na podstawie cepstrum")
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
         plt.show()
 
     # def plot_voicing(self):
@@ -615,7 +633,7 @@ class SpectogramAnalysisWindow:
         if self.first_update:
             self.colorbar = self.fig.colorbar(img, ax=self.ax, label="Amplituda [dB]")
             self.first_update = False
-            
+
         self.canvas.draw()
 
 if __name__ == "__main__":

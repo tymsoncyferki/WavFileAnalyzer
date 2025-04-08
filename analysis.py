@@ -306,6 +306,16 @@ class FileAnalyzer:
         return scf_b1, scf_b2, scf_b3, time
         
     def spectrogram(self, window_type='hann', overlap=0.5):
+        """
+        Calculates and generates data for spectogram
+
+        Args:
+            window_type (str)
+            overlap (float)
+
+        Returns:
+            spectogram_data, time, frequency
+        """
         frame_size = self.frame_size
         hop_size = int(frame_size * (1 - overlap))
 
@@ -328,28 +338,50 @@ class FileAnalyzer:
 
         # axes
         time_axis = np.arange(num_frames) * hop_size / self.sample_rate
-        freq_axis = np.fft.rfftfreq(frame_size, d=1 / self.sample_rate)
+        freq_axis = self.freq(frames=True)
 
         return spec_db, time_axis, freq_axis
 
+    def f0(self) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Calculates f0 using cepstrum
+
+        Returns:
+            f0, time
+        """
         
+        fmin = Config.MIN_F0
+        fmax = Config.MAX_F0
+
+        spectrum = self.fft(frames=True)
+        log_spectrum = np.log(np.abs(spectrum) + 1e-8)
+        cepstrum = np.fft.ifft(log_spectrum).real
+
+        quef_min = int(self.sample_rate / fmax)
+        quef_max = int(self.sample_rate / fmin)
+
+        f0 = [self.sample_rate / (np.argmax(frame[quef_min:quef_max]) + quef_min) for frame in cepstrum]
+        time = self.time(len(f0))
+
+        return f0, time
+
 
     # OTHER
 
     def calculate_parameters(self):
         params = {}
-        params['Audio type'] = self.classify_audio()
-        params['Mean Volume'] = self.mv()
-        params['Volume STD'] = self.vstd()
-        params['Volume Dynamic Range'] = self.vdr()
-        params['Volume Undulation'] = self.vu()
-        params['Low STE Ratio'] = self.lster()
-        params['Energy Entropy'] = self.energy_entropy()
-        params['ZCR STD'] = self.zstd()
-        params['ZCR Mean'] = self.meanzcr()
-        params['Silent Ratio'] = self.silent_ratio()
-        params['High ZCR Ratio'] = self.hzcrr()
-        params['Rhythm index'] = self.rhythm_index()
+        # params['Audio type'] = self.classify_audio()
+        # params['Mean Volume'] = self.mv()
+        # params['Volume STD'] = self.vstd()
+        # params['Volume Dynamic Range'] = self.vdr()
+        # params['Volume Undulation'] = self.vu()
+        # params['Low STE Ratio'] = self.lster()
+        # params['Energy Entropy'] = self.energy_entropy()
+        # params['ZCR STD'] = self.zstd()
+        # params['ZCR Mean'] = self.meanzcr()
+        # params['Silent Ratio'] = self.silent_ratio()
+        # params['High ZCR Ratio'] = self.hzcrr()
+        # params['Rhythm index'] = self.rhythm_index()
         return params
     
     @staticmethod
