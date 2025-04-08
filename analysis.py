@@ -56,6 +56,7 @@ class FileAnalyzer:
         Computes the FFT of the input
 
         Args:
+            data (np.ndarray)
             frames (bool): if true computes the FFT of each frame in the input
 
         Returns:
@@ -303,46 +304,34 @@ class FileAnalyzer:
         time = self.time(len(scf_b1))
 
         return scf_b1, scf_b2, scf_b3, time
-
-    
-    def hzcrr(self) -> float:
-        """
-        Calcualates HZCRR
-        """
-        zcr, time = self.zcr()
-        N = len(zcr)
         
-        frame_step = time[1] - time[0]
-        frames_in_1s = int(1.0 / frame_step)
+    def spectrogram(self, window_type='hann', overlap=0.5):
+        frame_size = self.frame_size
+        hop_size = int(frame_size * (1 - overlap))
 
-        count = 0
-        for n in range(N):
-            # window: n - half_window to n + half_window
-            half_window = frames_in_1s // 2
-            start = max(0, n - half_window)
-            end = min(N, n + half_window + 1)
-            
-            av_zcr = np.mean(zcr[start:end])
-            count += np.sign(zcr[n] - 1.5 * av_zcr) + 1
+        num_frames = 1 + (len(self.data) - frame_size) // hop_size
+        spec = []
 
-        zcr_value = count / (2 * N)
-        return zcr_value
-    
-    def classify_audio(self):
-        """
-        Classifies audio into speech and music based on heuristics.
-        
-        Returns:
-            str: audio type 'speech', 'music' or 'other'
-        """
-        lster = self.lster()
-        zcr_std = self.zstd()
-        rhythm = self.rhythm_index()
-        if np.sum([(lster > 0.3), (zcr_std > 0.07), (rhythm < 0.3)]) >= 2:  # type: ignore
-            return "speech"
-        elif np.sum([(lster < 0.2), (zcr_std < 0.04), (rhythm > 0.4)]) >= 2:  # type: ignore
-            return "music"
-        return 'other'
+        for i in range(num_frames):
+            start = i * hop_size
+            frame = self.data[start:start + frame_size]
+            if len(frame) < frame_size:
+                frame = np.pad(frame, (0, frame_size - len(frame)))
+
+            windowed_frame = self.apply_window(frame, window_type)
+            fft_result = self.fft(windowed_frame)
+            magnitude = np.abs(fft_result)
+            spec.append(magnitude)
+
+        spec = np.array(spec).T  # [freq x time]
+        spec_db = 10 * np.log10(spec + 1e-6)
+
+        # axes
+        time_axis = np.arange(num_frames) * hop_size / self.sample_rate
+        freq_axis = np.fft.rfftfreq(frame_size, d=1 / self.sample_rate)
+
+        return spec_db, time_axis, freq_axis
+
         
 
     # OTHER

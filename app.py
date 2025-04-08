@@ -120,6 +120,9 @@ class AudioApp:
         self.windows_button = tk.Button(self.clip_analysis_frame, text="Funkcje okna", command=self.window_analysis_window, state=tk.DISABLED)
         self.windows_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
 
+        self.spect_button = tk.Button(self.clip_analysis_frame, text="Spektrogram", command=self.spectrogram_window, state=tk.DISABLED)
+        self.spect_button.pack(pady=5, padx=10, side=tk.TOP, fill='x')
+
         # self.clip_label = tk.Label(self.clip_analysis_frame, text="Inne analizy")
         # self.clip_label.pack(pady=(15, 5), padx=10)
 
@@ -210,6 +213,8 @@ class AudioApp:
     def window_analysis_window(self):
         FrameAnalysisWindow(self.root, self.analyzer)
 
+    def spectrogram_window(self):
+        SpectogramAnalysisWindow(self.root, self.analyzer)
 
     def show_settings(self):
         self.config_window = tk.Toplevel(self.root, padx=40, pady=10)
@@ -451,7 +456,6 @@ class FrameAnalysisWindow:
         self.window.destroy()
 
     def create_widgets(self):
-        # Dropdown do wyboru okna
         window_label = tk.Label(self.window, text="Funkcja okna:")
         window_label.pack()
         
@@ -463,7 +467,6 @@ class FrameAnalysisWindow:
         self.window_dropdown.bind("<<ComboboxSelected>>", self.on_window_change)
         self.window_dropdown.pack()
 
-        # Suwak do wyboru ramki
         # self.slider = tk.Scale(self.window, from_=0, to=len(self.analyzer.frames()) - 1,
         #                        orient=tk.HORIZONTAL, label="Numer ramki", command=self.on_slider_change)
         # self.slider.pack(fill='x', padx=10, pady=5)
@@ -479,7 +482,6 @@ class FrameAnalysisWindow:
 
         self.selected_range = (0, len(self.analyzer.frames())-1)
 
-        # Matplotlib - tworzenie figury
         self.fig, (self.ax_time, self.ax_freq) = plt.subplots(2, 1, figsize=(6, 5))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
         self.canvas_widget = self.canvas.get_tk_widget()
@@ -540,6 +542,81 @@ class FrameAnalysisWindow:
         self.fig.tight_layout()
         self.canvas.draw()
 
+
+class SpectogramAnalysisWindow:
+    def __init__(self, master, analyzer: FileAnalyzer):
+        self.analyzer = analyzer
+        self.window_type = 'boxcar'
+        self.overlap_value = 0.5
+
+        self.window = tk.Toplevel(master)
+        self.window.title("Spektogram")
+
+        self.window.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        self.first_update = True
+        self.y_lim = (0,0)
+        self.x_lim = (0,0)
+
+        self.create_widgets()
+        self.update_plots()
+
+    def on_close(self):
+        plt.close(self.fig)
+        self.window.destroy()
+
+    def create_widgets(self):
+        # Dropdown do wyboru okna
+        window_label = tk.Label(self.window, text="Funkcja okna:")
+        window_label.pack()
+        
+        self.window_options = ['boxcar', 'triang', 'hamming', 'hann', 'blackman', 'bartlett',
+                                'flattop', 'parzen', 'bohman', 'blackmanharris', 'nuttall',
+                                'barthann', 'cosine', 'exponential', 'tukey', 'taylor', 'lanczos']
+        self.window_dropdown = ttk.Combobox(self.window, values=self.window_options)
+        self.window_dropdown.set(self.window_type)
+        self.window_dropdown.bind("<<ComboboxSelected>>", self.on_window_change)
+        self.window_dropdown.pack()
+
+        self.overlap_label = tk.Label(self.window, text="Overlap (%)")
+        self.overlap_label.pack()
+        self.overlap_slider = tk.Scale(self.window, from_=0, to=90, orient=tk.HORIZONTAL, command=self.on_overlap_change)
+        self.overlap_slider.set(int(self.overlap_value * 100))
+        self.overlap_slider.pack()
+
+        self.fig, self.ax = plt.subplots(figsize=(10, 4))
+        self.colorbar = None
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.canvas_widget.pack()
+
+    def on_window_change(self, event):
+        # get overlap value 
+        self.window_type = self.window_dropdown.get()
+        self.update_plots()
+
+    def on_overlap_change(self, val):
+        self.overlap_value = self.overlap_slider.get() / 100
+        self.update_plots()
+
+    def update_plots(self):
+        spec_db, time_axis, freq_axis = self.analyzer.spectrogram(self.window_type, self.overlap_value)
+
+        self.ax.clear()
+        # if self.colorbar:
+        #     self.colorbar.ax.remove()
+
+        img = self.ax.imshow(spec_db, origin='lower', aspect='auto',
+                             extent=[time_axis[0], time_axis[-1], freq_axis[0], freq_axis[-1]])
+        self.ax.set_xlabel("Czas [s]")
+        self.ax.set_ylabel("Częstotliwość [Hz]")
+        self.ax.set_title("Spektrogram")
+
+        if self.first_update:
+            self.colorbar = self.fig.colorbar(img, ax=self.ax, label="Amplituda [dB]")
+            self.first_update = False
+            
+        self.canvas.draw()
 
 if __name__ == "__main__":
     root = tk.Tk()
