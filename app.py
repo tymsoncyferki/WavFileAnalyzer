@@ -35,13 +35,14 @@ class AudioApp:
         
         file_menu = tk.Menu(menu)
         
-        sub_menu = tk.Menu(file_menu, tearoff=0)
-        sub_menu.add_command(label='Parametry ramek', command=lambda: self.save_file(clip=False))
-        sub_menu.add_command(label='Parametry klipu', command=lambda: self.save_file(clip=True))
-        file_menu.add_cascade(
-            label="Eksportuj",
-            menu=sub_menu
-        )
+        # sub_menu = tk.Menu(file_menu, tearoff=0)
+        # sub_menu.add_command(label='Parametry ramek', command=lambda: self.save_file(clip=False))
+        # sub_menu.add_command(label='Parametry klipu', command=lambda: self.save_file(clip=True))
+        # file_menu.add_cascade(
+        #     label="Eksportuj",
+        #     menu=sub_menu
+        # )
+
         menu.add_cascade(label="Plik", menu=file_menu)
         file_menu.add_command(label="Wyjście", command=self.on_closing)
 
@@ -139,10 +140,10 @@ class AudioApp:
 
         # canvas
 
-        self.canvas_label = tk.Label(root, text="Przebieg czasowy pliku:")
+        self.canvas_label = tk.Label(self.root, text="Przebieg czasowy pliku:")
         self.canvas_label.pack(anchor='w', pady=(30,0), padx=20)
 
-        self.canvas_frame = tk.Frame(root, relief='solid', border=1, background='white')
+        self.canvas_frame = tk.Frame(self.root, relief='solid', border=1, background='white')
         self.canvas_frame.pack(pady=(10, 20), padx=20)
 
         self.fig = plt.figure(constrained_layout=True)
@@ -230,7 +231,6 @@ class AudioApp:
         self.frame_size_var = tk.StringVar(value=str(int(Config.FRAME_SIZE * 1000)))
         self.min_f0_var = tk.StringVar(value=str(Config.MIN_F0))
         self.max_f0_var = tk.StringVar(value=str(Config.MAX_F0))
-        self.entropy_k_var = tk.StringVar(value=str(Config.ENTROPY_K))
 
         tk.Label(self.config_window, text="Rozmiar ramki (ms):").pack(pady=5)
         tk.Entry(self.config_window, textvariable=self.frame_size_var).pack()
@@ -241,9 +241,6 @@ class AudioApp:
         tk.Label(self.config_window, text="Maks. F0 (hz):").pack(pady=5)
         tk.Entry(self.config_window, textvariable=self.max_f0_var).pack()
 
-        tk.Label(self.config_window, text="Rozmiar segmentu K (w entropii energii):").pack(pady=5)
-        tk.Entry(self.config_window, textvariable=self.entropy_k_var).pack()
-
         tk.Button(self.config_window, text="Zapisz", command=self.save_config).pack(pady=15)
         self.config_window.bind('<Return>', lambda event: self.save_config())
 
@@ -252,7 +249,6 @@ class AudioApp:
             Config.FRAME_SIZE = int(self.frame_size_var.get()) / 1000
             Config.MIN_F0 = int(self.min_f0_var.get())
             Config.MAX_F0 = int(self.max_f0_var.get())
-            Config.ENTROPY_K = int(self.entropy_k_var.get())
 
             if Config.MIN_F0 == 0:
                 Config.MIN_F0 += 1
@@ -387,41 +383,6 @@ class AudioApp:
         plt.tight_layout()
         plt.show()
 
-    # def plot_voicing(self):
-        
-    #     labels, time = self.analyzer.voicing()
-    #     volume, _ = self.analyzer.volume()
-
-    #     color_map = {
-    #         'voiced': 'green',
-    #         'unvoiced': 'red',
-    #         'ambiguous': 'gray'
-    #     }
-
-    #     plt.figure(figsize=(10, 4))
-
-    #     # to create the table
-    #     for label, color in color_map.items():
-    #         plt.axvspan(0, 0, color=color, alpha=0.4, label=label)
-
-    #     # (un)voiced segments
-    #     delta = time[1] - time[0]
-    #     for t, label in zip(time, labels):
-    #         if label == 'ambiguous':
-    #             continue
-    #         t_start = t
-    #         t_end = t_start + delta
-    #         plt.axvspan(t_start, t_end, color=color_map.get(label), alpha=0.4)
-
-    #     plt.plot(time, volume, label="volume", alpha=0.8)
-
-    #     plt.xlabel('Czas [s]')
-    #     plt.ylabel('Głośność')
-    #     plt.title('Podział na fragmenty dźwięczne i bezdźwięczne')
-    #     plt.xlim(time[0], time[-1] + delta)
-    #     plt.legend()
-    #     plt.tight_layout()
-    #     plt.show()
 
     def save_file(self, clip=False):
         file_path = filedialog.asksaveasfilename(

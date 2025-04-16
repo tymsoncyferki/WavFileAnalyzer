@@ -7,6 +7,7 @@ data/radio
 data/women
 data/man
 data/music
-data/sample
+data/sentences
+data/vowels/zdania
 test.ipynb
 example.wav

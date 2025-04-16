@@ -84,6 +84,9 @@ class FileAnalyzer:
         return rfftfreq(n, d=1/self.sample_rate)
 
     def get_band_indices(self, freqs):
+        """
+        Creates bands indices
+        """
         fs = self.sample_rate
         ratio = fs / 22050
         base_bands = [

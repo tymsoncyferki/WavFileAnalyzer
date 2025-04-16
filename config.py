@@ -6,6 +6,5 @@ class Config:
     MENU_HEIGHT=400
     # analysis
     FRAME_SIZE=0.1
-    MIN_F0=80
-    MAX_F0=500
-    ENTROPY_K=100
+    MIN_F0=50
+    MAX_F0=400
