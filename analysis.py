@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.io import wavfile
-from scipy import stats
 from config import Config
-from scipy.signal import find_peaks
 from scipy.signal.windows import get_window
 from scipy.fft import rfft, rfftfreq
 
@@ -367,32 +365,3 @@ class FileAnalyzer:
         time = self.time(len(f0))
 
         return f0, time
-
-
-    # OTHER
-
-    def calculate_parameters(self):
-        params = {}
-        # params['Audio type'] = self.classify_audio()
-        # params['Mean Volume'] = self.mv()
-        # params['Volume STD'] = self.vstd()
-        # params['Volume Dynamic Range'] = self.vdr()
-        # params['Volume Undulation'] = self.vu()
-        # params['Low STE Ratio'] = self.lster()
-        # params['Energy Entropy'] = self.energy_entropy()
-        # params['ZCR STD'] = self.zstd()
-        # params['ZCR Mean'] = self.meanzcr()
-        # params['Silent Ratio'] = self.silent_ratio()
-        # params['High ZCR Ratio'] = self.hzcrr()
-        # params['Rhythm index'] = self.rhythm_index()
-        return params
-    
-    @staticmethod
-    def get_stats(array):
-        """
-        Calculates mean, median, mode
-        """
-        mean = np.mean(array)
-        median = np.median(array)
-        mode = stats.mode(array)[0]
-        return mean, median, mode
