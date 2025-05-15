@@ -118,7 +118,7 @@ def compute_dct(log_filter_banks, num_ceps=13):
     return mfcc[:, 1:num_ceps+1]  # Exclude c0
 
 
-def mfcc(signal, sample_rate, num_ceps=13, nfilt=26, NFFT=512, frame_size=0.025, frame_stride=0.01):
+def mfcc(signal, sample_rate, n_ceps=13, n_filt=26, n_fft=512, frame_size=0.025, frame_stride=0.01):
     """
     Calculates MFCC features from an audio signal by chaining all processing steps.
 
@@ -144,12 +144,12 @@ def mfcc(signal, sample_rate, num_ceps=13, nfilt=26, NFFT=512, frame_size=0.025,
         frame_stride=frame_stride
     )
 
-    power_spec = compute_power_spectrum(frames, NFFT)
+    power_spec = compute_power_spectrum(frames, n_fft)
 
-    mel_filters = mel_filter_bank(nfilt, NFFT, sample_rate)
+    mel_filters = mel_filter_bank(n_filt, n_fft, sample_rate)
 
     log_mel_energies = apply_log_energy(power_spec, mel_filters)
 
-    mfcc_features = compute_dct(log_mel_energies, num_ceps)
+    mfcc_features = compute_dct(log_mel_energies, n_ceps)
 
-    return mfcc_features
+    return np.float32(mfcc_features)
