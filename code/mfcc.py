@@ -3,29 +3,29 @@ from scipy.fftpack import dct
 
 def pre_emphasis(signal, alpha=0.97):
     """
-    Applies pre-emphasis filter to boost high frequencies.
+    applies pre-emphasis filter to boost high frequencies
 
     Args:
-        signal (np.array): Input raw audio signal.
-        alpha (float): Pre-emphasis coefficient (default is 0.97).
+        signal (np.array): input raw audio signal
+        alpha (float): coefficient (default is 0.97)
 
     Returns:
-        np.array: Pre-emphasized signal.
+        np.array: pre-emphasized signal
     """
     return np.append(signal[0], signal[1:] - alpha * signal[:-1])
 
 def framing_and_windowing(signal, sample_rate, frame_size=0.025, frame_stride=0.01):
     """
-    Splits signal into overlapping frames and applies Hamming window.
+    splits signal into overlapping frames and applies Hamming window
 
     Args:
-        signal (np.array): Pre-emphasized audio signal.
-        sample_rate (int): Sampling rate in Hz.
-        frame_size (float): Frame length in seconds (default 0.025).
-        frame_stride (float): Stride between frames in seconds (default 0.01).
+        signal (np.array): pre-emphasized audio signal
+        sample_rate (int): sampling rate in Hz
+        frame_size (float): frame length in seconds (default 0.025)
+        frame_stride (float): stride between frames in seconds (default 0.01)
 
     Returns:
-        np.array: Windowed frames of shape (num_frames, frame_length).
+        np.array: windowed frames of shape (num_frames, frame_length)
     """
     frame_len = int(round(frame_size * sample_rate))
     frame_step = int(round(frame_stride * sample_rate))
@@ -42,41 +42,41 @@ def framing_and_windowing(signal, sample_rate, frame_size=0.025, frame_stride=0.
     hamming = np.hamming(frame_len)
     return frames * hamming
 
-def compute_power_spectrum(frames, NFFT=512):
+def compute_power_spectrum(frames, n_fft=512):
     """
-    Computes the power spectrum of each frame using FFT.
+    computes the power spectrum of each frame using FFT
 
     Args:
-        frames (np.array): Windowed frames.
-        NFFT (int): Number of FFT points (default 512).
+        frames (np.array): windowed frames
+        n_fft (int): number of FFT points (default 512)
 
     Returns:
-        np.array: Power spectrum of shape (num_frames, NFFT/2 + 1).
+        np.array: power spectrum of shape (num_frames, n_fft/2 + 1)
     """
-    mag_frames = np.absolute(np.fft.rfft(frames, NFFT))
-    power_spectrum = (1.0 / NFFT) * (mag_frames ** 2)
+    mag_frames = np.absolute(np.fft.rfft(frames, n_fft))
+    power_spectrum = (1.0 / n_fft) * (mag_frames ** 2)
     return power_spectrum
 
-def mel_filter_bank(nfilt, NFFT, sample_rate):
+def mel_filter_bank(n_filt, n_fft, sample_rate):
     """
-    Creates a Mel filter bank with triangular filters.
+    creates a Mel filter bank with triangular filters
 
     Args:
-        nfilt (int): Number of Mel filters.
-        NFFT (int): Number of FFT points.
-        sample_rate (int): Sampling rate in Hz.
+        n_filt (int): number of Mel filters
+        n_fft (int): number of FFT points
+        sample_rate (int): sampling rate in Hz
 
     Returns:
-        np.array: Filter bank matrix of shape (nfilt, NFFT/2 + 1).
+        np.array: filter bank matrix of shape (n_filt, n_fft/2 + 1).
     """
     low_mel = 0
     high_mel = 2595 * np.log10(1 + (sample_rate / 2) / 700)
-    mel_points = np.linspace(low_mel, high_mel, nfilt + 2)
+    mel_points = np.linspace(low_mel, high_mel, n_filt + 2)
     hz_points = 700 * (10 ** (mel_points / 2595) - 1)
-    bin = np.floor((NFFT + 1) * hz_points / sample_rate).astype(int)
+    bin = np.floor((n_fft + 1) * hz_points / sample_rate).astype(int)
 
-    fbank = np.zeros((nfilt, int(NFFT / 2 + 1)))
-    for m in range(1, nfilt + 1):
+    fbank = np.zeros((n_filt, int(n_fft / 2 + 1)))
+    for m in range(1, n_filt + 1):
         f_m_minus = bin[m - 1]
         f_m = bin[m]
         f_m_plus = bin[m + 1]
@@ -90,14 +90,14 @@ def mel_filter_bank(nfilt, NFFT, sample_rate):
 
 def apply_log_energy(power_spectrum, fbank):
     """
-    Applies Mel filter bank to power spectrum and performs log compression.
+    applies mel filter bank to power spectrum and performs log compression
 
     Args:
-        power_spectrum (np.array): Power spectrum of frames.
-        fbank (np.array): Mel filter bank.
+        power_spectrum (np.array): power spectrum of frames
+        fbank (np.array): mel filter bank
 
     Returns:
-        np.array: Logarithmic Mel-filtered energies.
+        np.array: logarithmic mel-filtered energies
     """
     filter_banks = np.dot(power_spectrum, fbank.T)
     filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)
@@ -105,34 +105,33 @@ def apply_log_energy(power_spectrum, fbank):
 
 def compute_dct(log_filter_banks, num_ceps=13):
     """
-    Applies Discrete Cosine Transform (DCT) to log Mel filterbank energies.
+    applies discrete cosine transform (DCT) to log mel filterbank energies
 
     Args:
-        log_filter_banks (np.array): Log-scaled Mel filterbank energies.
-        num_ceps (int): Number of MFCC coefficients to return (excluding c0).
+        log_filter_banks (np.array): log-scaled Mel filterbank energies
+        num_ceps (int): number of MFCC coefficients to return (excluding c0)
 
     Returns:
-        np.array: MFCCs of shape (num_frames, num_ceps).
+        np.array: MFCCs of shape (num_frames, num_ceps)
     """
     mfcc = dct(log_filter_banks, type=2, axis=1, norm='ortho')
     return mfcc[:, 1:num_ceps+1]  # Exclude c0
 
-
 def mfcc(signal, sample_rate, n_ceps=13, n_filt=26, n_fft=512, frame_size=0.025, frame_stride=0.01):
     """
-    Calculates MFCC features from an audio signal by chaining all processing steps.
+    Calculates MFCC features from an audio signal
 
     Args:
-        signal (np.array): Raw audio signal.
-        sample_rate (int): Sampling rate of the signal in Hz.
-        num_ceps (int): Number of cepstral coefficients to return (default 13).
-        nfilt (int): Number of Mel filters to use (default 26).
-        NFFT (int): Number of FFT points (default 512).
-        frame_size (float): Frame duration in seconds (default 0.025).
-        frame_stride (float): Stride duration in seconds (default 0.01).
+        signal (np.array): raw audio signal
+        sample_rate (int): sampling rate of the signal in Hz
+        num_ceps (int): number of cepstral coefficients to return (default 13)
+        nfilt (int): number of Mel filters to use (default 26)
+        NFFT (int): number of FFT points (default 512)
+        frame_size (float): frame duration in seconds (default 0.025)
+        frame_stride (float): stride duration in seconds (default 0.01)
 
     Returns:
-        np.array: Final MFCC feature matrix of shape (num_frames, num_ceps).
+        np.array: MFCC feature matrix of shape (num_frames, num_ceps)
     """
 
     emphasized_signal = pre_emphasis(signal)

@@ -45,12 +45,6 @@ def to_mono(data: torch.Tensor) -> torch.Tensor:
     if data.dim() > 1:  
         data = torch.mean(data, dim=0)
     return data
-
-
-def load_file_list(txt_path: str) -> List[str]:
-    """ loads a file """
-    with open(txt_path, 'r') as f:
-        return f.readlines()
     
 
 def create_class_mapping() -> dict:
@@ -88,8 +82,7 @@ class SpeechCommandsDataset(Dataset):
         return waveform, label_idx
 
 
-def get_dataloaders(base_dir: str, all_files: List[str],
-                 batch_size: int = 64, transform=None, train_fraction: float = 1.0) -> Tuple[DataLoader, DataLoader, dict]:
+def get_dataloaders(base_dir: str, all_files: List[str], batch_size: int = 64, transform=None, train_fraction: float = 1.0) -> Tuple[DataLoader, DataLoader, dict]:
     """
     Gets dataloaders
     
@@ -124,7 +117,7 @@ def load_dataset(batch_size: int = 64, transform=None, train_fraction: float = 1
         train_fraction (float): fraction of training dataset to use
 
     Returns:
-        return train_loader, val_loader, test_loader, class_map
+        return train_loader, val_loader, class_map
     """
     base_dir = Path(f'{Config.BASEDIR}').resolve()
     all_files = [str(p.resolve()) for p in base_dir.rglob('*.wav') if str(p.parts[-2]) in Config.MAIN_CLASSES]
