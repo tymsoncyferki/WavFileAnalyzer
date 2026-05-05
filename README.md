@@ -8,6 +8,9 @@ Each branch corresponds to different project for sound processing classes
 - `project2`: "Cechy sygnału audio w dziedzinie częstotliwości" (gui)
 - `project3`: "Rozpoznawanie słów przy użyciu MFCC" (notebook)
 
+## App
+Install the requirements from `requirements.txt` file and start the app by running `python app.py` in console.
+
 ## Gui
 On starting page you can upload a `.wav` file:
 
